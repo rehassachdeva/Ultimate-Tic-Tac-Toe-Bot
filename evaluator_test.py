@@ -16,6 +16,7 @@ In case of any queries, please post on moodle.iiit.ac.in
 import sys
 import random
 import signal
+import copy
 
 def handler(signum, frame):
     #print 'Signal handler called with signal', signum
@@ -38,10 +39,10 @@ class Player1:
             self.win_pos = [(0, 1, 2), (3, 4, 5), (6, 7, 8), (0, 3, 6), (1, 4, 7), (2, 5, 8), (0, 4, 8), (2, 4, 6)]
             self.moves = " "
             self.flag = " "
+            self.block_stat = " "
             self.opp_flag = " "
             
-        def blocks_allowed(old_move, block_stat):
-            print "hello"
+        def blocks_allowed(self, old_move, block_stat):
             blocks = []
             if old_move[0]%3 == 0:
                 if old_move[1]%3 == 0:
@@ -75,7 +76,7 @@ class Player1:
                     
             return final_blocks_allowed
 
-        def cells_allowed(temp_board, blocks_allowed):
+        def cells_allowed(self, temp_board, blocks_allowed):
 
             cells = []
 
@@ -103,11 +104,9 @@ class Player1:
             
             return cells
 
-        def heuristic(self, node):
+        def heuristic(self, node, temp_block):
 
             utility = 0
-
-            temp_block_stat = ['-'] * 9
 
             for i in xrange(9):
 
@@ -133,38 +132,75 @@ class Player1:
                         break
 
             for each in self.win_pos:
-            	if temp_block_stat[each[0]] == self.flag and temp_block_stat[each[1]] == self.flag and temp_block_stat[each[2]] == self.flag:
+            	if temp_block[each[0]] == self.flag and temp_block[each[1]] == self.flag and temp_block[each[2]] == self.flag:
                     utility += 10000
                     break
                 
-                if temp_block_stat[each[0]] == self.opp_flag and temp_block_stat[each[1]] == self.opp_flag and temp_block_stat[each[2]] == self.opp_flag:
+                if temp_block[each[0]] == self.opp_flag and temp_block[each[1]] == self.opp_flag and temp_block[each[2]] == self.opp_flag:
                     utility -= 10000
                     break   
             
             return utility      
 
-        def genChild(self, node, mov):
-            temp_node = list(node)
+        def genChild(self, node, temp_block, mov):
+            
+            temp_node = copy.copy(node)
+            
             temp_node[mov[0]][mov[1]] = self.flag
-            return temp_node
+            
+            current_temp_block = copy.copy(temp_block)
+            
+            block_num = (mov[0] / 3) * 3 + (mov[1] / 3)
+
+            temp_stat = []
+            
+            start_row = (block_num / 3) * 3
+            start_col = ((block_num) % 3) * 3
+            
+            for j in xrange(start_row, start_row + 3):
+                for k in xrange(start_col, start_col + 3):
+                    temp_stat.append(node[j][k])
+            
+
+            for each in self.win_pos:
+                    
+                if temp_stat[each[0]] == self.flag and temp_stat[each[1]] == self.flag and temp_stat[each[2]] == self.flag:
+                    current_temp_block[block_num] = self.flag
+                    break
+
+                if temp_stat[each[0]] == self.opp_flag and temp_stat[each[1]] == self.opp_flag and temp_stat[each[2]] == self.opp_flag:
+                    current_temp_block[block_num] = self.opp_flag
+                    break
+
+            return (temp_node, current_temp_block)
 
         
-        def alphabeta(self, node, depth, alpha, beta, maximizingPlayer):
+        def alphabeta(self, node, depth, alpha, beta, maximizingPlayer, old_move, temp_block):
+
+            blocks_allowed = self.blocks_allowed(self, node, temp_block)
+            
+            cells_allowed = self.cells_allowed(self, node, blocks_allowed)
+
             ret_mov = " "
+            
             if depth == 0: 
-                return heuristic(node)
+                return self.heuristic(node, temp_block)
 
             if maximizingPlayer:
                 v = -sys.maxsize - 1
-                for mov in self.moves:
-                    child = genChild(self, node, mov)
-                    temp = alphabeta(child, depth - 1, alpha, beta, False)
+                for mov in cells_allowed:
+                    tmp = self.genChild(node, temp_block, mov)
+                    child = tmp[0]
+                    current_temp_block = tmp[1]                  
+                    
+                    temp = self.alphabeta(child, depth - 1, alpha, beta, False, mov, current_temp_block)
                     if v < temp:
                         v = temp
                         ret_mov = mov
                     alpha = max(alpha, v)
                     if beta <= alpha:
                         break
+                
                 if depth == 2:
                     return ret_mov
                 else:
@@ -172,9 +208,12 @@ class Player1:
 
             else:
                 v = sys.maxsize
-                for mov in self.moves:
-                    child = genChild(self, node, mov)
-                    temp = alphabeta(child, depth - 1, alpha, beta, True)
+                for mov in cells_allowed:
+                    tmp = self.genChild(node, temp_block, mov)
+                    child = tmp[0]
+                    current_temp_block = tmp[1]                  
+                    
+                    temp = self.alphabeta(child, depth - 1, alpha, beta, True, mov, current_temp_block)
                     if v > temp:
                         v = temp
                         ret_mov = mov
@@ -193,15 +232,11 @@ class Player1:
                         self.opp_flag = 'o'
                     else:
                         self.opp_flag = 'x'
-		#List of permitted blocks, based on old move.
-		blocks_allowed  = blocks_allowed(old_move, temp_block)
-		#Get list of empty valid cells
-		cells = cells_allowed(temp_board, blocks_allowed)
-                
-                self.moves = cells
-		#Choose a move based on some algorithm, here it is a random move.
+		
+                #Choose a move based on some algorithm, here it is a random move.
 		#return cells[random.randrange(len(cells))]
-                return alphabeta(self, temp_board, 2,  -sys.maxsize - 1, sys.maxsize, True)
+                ret =  self.alphabeta(temp_board, 2,  -sys.maxsize - 1, sys.maxsize, True, old_move, temp_block)
+                return ret
 
 class Player2:
 	
@@ -311,7 +346,8 @@ def check_valid_move(game_board, block_stat, current_move, old_move):
 		return True
 
 	#List of permitted blocks, based on old move.
-	blocks_allowed  = determine_blocks_allowed(old_move, block_stat)
+	print "hey", old_move
+        blocks_allowed  = determine_blocks_allowed(old_move, block_stat)
 	print blocks_allowed
 	# We get all the empty cells in allowed blocks. If they're all full, we get all the empty cells in the entire board.
 	cells = get_empty_out_of(game_board, blocks_allowed)
