@@ -40,13 +40,12 @@ class Player23:
                     blocks = [5,7]
 
             final_blocks_allowed = []
+            
             for block in blocks:
-                if block_stat[i] == '-':
+                if block_stat[block] == '-':
                     final_blocks_allowed.append(block)
 
             return final_blocks_allowed
-
-
 
         def cells_allowed(temp_board, blocks_allowed):
 
