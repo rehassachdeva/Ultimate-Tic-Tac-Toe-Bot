@@ -159,7 +159,7 @@ class Player1:
             
             for j in xrange(start_row, start_row + 3):
                 for k in xrange(start_col, start_col + 3):
-                    temp_stat.append(node[j][k])
+                    temp_stat.append(temp_node[j][k])
             
 
             for each in self.win_pos:
@@ -346,7 +346,6 @@ def check_valid_move(game_board, block_stat, current_move, old_move):
 		return True
 
 	#List of permitted blocks, based on old move.
-	print "hey", old_move
         blocks_allowed  = determine_blocks_allowed(old_move, block_stat)
 	print blocks_allowed
 	# We get all the empty cells in allowed blocks. If they're all full, we get all the empty cells in the entire board.
