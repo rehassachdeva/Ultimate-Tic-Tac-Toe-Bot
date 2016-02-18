@@ -46,9 +46,9 @@ class Player1:
             self.opp_flag = " "
 
             for each in self.win_pos:
-                self.twos.append(each[0],each[1])
-                self.twos.append(each[1],each[2])
-                self.twos.append(each[0],each[1])
+                self.twos.append((each[0],each[1]))
+                self.twos.append((each[1],each[2]))
+                self.twos.append((each[0],each[1]))
 
         def blocks_allowed(self, old_move, block_stat):
             blocks = []
@@ -194,16 +194,16 @@ class Player1:
 
             #Global corner
             for each in corner:
-                    if temp_block[each] == self.flag
+                    if temp_block[each] == self.flag:
                         utility +=3
-                    if temp_block[each] == self.opp_flag
+                    if temp_block[each] == self.opp_flag:
                         utility -=3
 
             #Global rest
             for each in rest:
-                    if temp_block[each] == self.flag
+                    if temp_block[each] == self.flag:
                         utility +=2
-                    if temp_block[each] == self.opp_flag
+                    if temp_block[each] == self.opp_flag:
                         utility -=2
 
             #Global center
