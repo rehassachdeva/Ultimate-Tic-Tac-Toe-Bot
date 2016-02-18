@@ -18,6 +18,7 @@ import random
 import signal
 import copy
 
+
 def handler(signum, frame):
     #print 'Signal handler called with signal', signum
     raise TimedOutExc()
@@ -44,6 +45,7 @@ class Player1:
             self.flag = " "
             self.block_stat = " "
             self.opp_flag = " "
+            self.gctr = 0
 
             for each in self.win_pos:
                 self.twos.append((each[0],each[1]))
@@ -216,11 +218,11 @@ class Player1:
 
             return utility
 
-        def genChild(self, node, temp_block, mov):
+        def genChild(self, node, temp_block, mov, current_flag):
 
             temp_node = copy.copy(node)
 
-            temp_node[mov[0]][mov[1]] = self.flag
+            temp_node[mov[0]][mov[1]] = current_flag
 
             current_temp_block = copy.copy(temp_block)
 
@@ -251,9 +253,21 @@ class Player1:
 
         def alphabeta(self, node, depth, alpha, beta, maximizingPlayer, old_move, temp_block):
 
-            blocks_allowed = self.blocks_allowed(self, node, temp_block)
+            print "inside"
+            print self.gctr
+            self.gctr += 1
+            
+            print "hello"
 
-            cells_allowed = self.cells_allowed(self, node, blocks_allowed)
+            blocks_allowed = self.blocks_allowed(node, temp_block)
+            
+            print blocks_allowed
+
+            cells_allowed = self.cells_allowed(node, blocks_allowed)
+
+
+            if old_move == (-1, -1):
+		return cells_allowed[random.randrange(len(cells_allowed))]
 
             ret_mov = " "
 
@@ -263,7 +277,7 @@ class Player1:
             if maximizingPlayer:
                 v = -sys.maxsize - 1
                 for mov in cells_allowed:
-                    tmp = self.genChild(node, temp_block, mov)
+                    tmp = self.genChild(node, temp_block, mov, self.flag)
                     child = tmp[0]
                     current_temp_block = tmp[1]
 
@@ -283,7 +297,7 @@ class Player1:
             else:
                 v = sys.maxsize
                 for mov in cells_allowed:
-                    tmp = self.genChild(node, temp_block, mov)
+                    tmp = self.genChild(node, temp_block, mov, self.opp_flag)
                     child = tmp[0]
                     current_temp_block = tmp[1]
 
