@@ -1,4 +1,4 @@
-''' 
+'''
 
 This is the engine for the Ultimate TicTacToe Tournament. The code in this file is not for reproduction.
 @author: Devansh Shah
@@ -27,21 +27,29 @@ class ManualPlayer:
 	def __init__(self):
 		pass
 	def move(self, temp_board, temp_block, old_move, flag):
-		print 'Enter your move: <format:row column> (you\'re playing with', flag + ")"	
+		print 'Enter your move: <format:row column> (you\'re playing with', flag + ")"
 		mvp = raw_input()
 		mvp = mvp.split()
 		return (int(mvp[0]), int(mvp[1]))
-		
+
 class Player1:
-	
+
 	def __init__(self):
             # You may initialize your object here and use any variables for storing throughout the game
             self.win_pos = [(0, 1, 2), (3, 4, 5), (6, 7, 8), (0, 3, 6), (1, 4, 7), (2, 5, 8), (0, 4, 8), (2, 4, 6)]
+            self.twos = []
+            self.corners = [0, 2, 6, 8]
+            self.rest = [1, 3, 5, 7]
             self.moves = " "
             self.flag = " "
             self.block_stat = " "
             self.opp_flag = " "
-            
+
+            for each in self.win_pos:
+                self.twos.append(each[0],each[1])
+                self.twos.append(each[1],each[2])
+                self.twos.append(each[0],each[1])
+
         def blocks_allowed(self, old_move, block_stat):
             blocks = []
             if old_move[0]%3 == 0:
@@ -51,12 +59,12 @@ class Player1:
                     blocks = [0,2]
                 if old_move[1]%3 == 2:
                     blocks = [1,5]
-            
+
             if old_move[0]%3 == 1:
                 if old_move[1]%3 == 0:
                     blocks = [0,6]
                 if old_move[1]%3 == 1:
-                    blocks = [4] 
+                    blocks = [4]
                 if old_move[1]%3 == 2:
                     blocks = [2,8]
 
@@ -67,13 +75,13 @@ class Player1:
                     blocks = [6,8]
                 if old_move[1]%3 == 2:
                     blocks = [5,7]
-                    
+
             final_blocks_allowed = []
-            
+
             for block in blocks:
                 if block_stat[block] == '-':
                     final_blocks_allowed.append(block)
-                    
+
             return final_blocks_allowed
 
         def cells_allowed(self, temp_board, blocks_allowed):
@@ -81,33 +89,34 @@ class Player1:
             cells = []
 
             for block in blocks_allowed:
-                
+
                 start_row = (block / 3) * 3
                 start_col = ((block) % 3) * 3
-                
+
                 for i in xrange(start_row, start_row + 3):
                     for j in xrange(start_col, start_col + 3):
                         if temp_board[i][j] == '-':
                             cells.append((i,j))
-                            
+
             if not cells:
-            
+
                 for i in xrange(9):
-                
+
                     start_row = (i / 3) * 3
                     start_col = ((i) % 3) * 3
-                    
+
                     for j in xrange(start_row, start_row + 3):
                         for k in xrange(start_col, start_col + 3):
                             if temp_board[j][k] == '-':
                                 cells.append((j,k))
-            
+
             return cells
 
         def heuristic(self, node, temp_block):
 
             utility = 0
 
+            #=========================Local======================
             for i in xrange(9):
 
                 start_row = (i / 3) * 3
@@ -119,8 +128,9 @@ class Player1:
                     for k in xrange(start_col, start_col + 3):
                         i_stat.append(node[j][k])
 
+                #Local win
                 for each in self.win_pos:
-                    
+
                     if i_stat[each[0]] == self.flag and i_stat[each[1]] == self.flag and i_stat[each[2]] == self.flag:
                         temp_block_stat[i] = self.flag
                         utility += 5
@@ -130,40 +140,104 @@ class Player1:
                         temp_block_stat[i] = self.opp_flag
                         utility -= 5
                         break
+                #Local twos
+                for each in self.twos:
 
+                    if i_stat[each[0]] == self.flag and i_stat[each[1]] == self.flag:
+                        utility += 4
+
+                    if i_stat[each[0]] == self.opp_flag and i_stat[each[1]] == self.opp_flag:
+                        utility -= 4
+
+                #Local corner
+                for each in corner:
+                    if i_stat[each] == self.flag:
+                        utility +=2
+                    if i_stat[each] == self.opp_flag:
+                        utility -=2
+
+                #Local rest
+                for each in rest:
+                    if i_stat[each] == self.flag:
+                        utility +=1
+                    if i_stat[each] == self.opp_flag:
+                        utility -=1
+
+                #Local center
+                    if i_stat[4] == self.flag:
+                        utility +=3
+                    if i_stat[4] == self.opp_flag:
+                        utility -=3
+
+
+
+            #================Global===============
+
+            #Global win
             for each in self.win_pos:
             	if temp_block[each[0]] == self.flag and temp_block[each[1]] == self.flag and temp_block[each[2]] == self.flag:
                     utility += 10000
                     break
-                
+
                 if temp_block[each[0]] == self.opp_flag and temp_block[each[1]] == self.opp_flag and temp_block[each[2]] == self.opp_flag:
                     utility -= 10000
-                    break   
-            
-            return utility      
+                    break
+
+            #Global twos
+            for each in self.twos:
+
+                    if temp_block[each[0]] == self.flag and temp_block[each[1]] == self.flag:
+                        utility += 5
+
+                    if temp_block[each[0]] == self.opp_flag and temp_block[each[1]] == self.opp_flag:
+                        utility -= 5
+
+            #Global corner
+            for each in corner:
+                    if temp_block[each] == self.flag
+                        utility +=3
+                    if temp_block[each] == self.opp_flag
+                        utility -=3
+
+            #Global rest
+            for each in rest:
+                    if temp_block[each] == self.flag
+                        utility +=2
+                    if temp_block[each] == self.opp_flag
+                        utility -=2
+
+            #Global center
+                    if temp_block[4] == self.flag:
+                        utility +=10
+                    if temp_block[4] == self.opp_flag:
+                        utility -=10
+
+
+
+            return utility
 
         def genChild(self, node, temp_block, mov):
-            
+
             temp_node = copy.copy(node)
-            
+
             temp_node[mov[0]][mov[1]] = self.flag
-            
+
             current_temp_block = copy.copy(temp_block)
-            
+
             block_num = (mov[0] / 3) * 3 + (mov[1] / 3)
 
             temp_stat = []
-            
+
             start_row = (block_num / 3) * 3
             start_col = ((block_num) % 3) * 3
-            
+
             for j in xrange(start_row, start_row + 3):
                 for k in xrange(start_col, start_col + 3):
                     temp_stat.append(temp_node[j][k])
-            
+
 
             for each in self.win_pos:
-                    
+
                 if temp_stat[each[0]] == self.flag and temp_stat[each[1]] == self.flag and temp_stat[each[2]] == self.flag:
                     current_temp_block[block_num] = self.flag
                     break
@@ -174,16 +248,16 @@ class Player1:
 
             return (temp_node, current_temp_block)
 
-        
+
         def alphabeta(self, node, depth, alpha, beta, maximizingPlayer, old_move, temp_block):
 
             blocks_allowed = self.blocks_allowed(self, node, temp_block)
-            
+
             cells_allowed = self.cells_allowed(self, node, blocks_allowed)
 
             ret_mov = " "
-            
-            if depth == 0: 
+
+            if depth == 0:
                 return self.heuristic(node, temp_block)
 
             if maximizingPlayer:
@@ -191,8 +265,8 @@ class Player1:
                 for mov in cells_allowed:
                     tmp = self.genChild(node, temp_block, mov)
                     child = tmp[0]
-                    current_temp_block = tmp[1]                  
-                    
+                    current_temp_block = tmp[1]
+
                     temp = self.alphabeta(child, depth - 1, alpha, beta, False, mov, current_temp_block)
                     if v < temp:
                         v = temp
@@ -200,7 +274,7 @@ class Player1:
                     alpha = max(alpha, v)
                     if beta <= alpha:
                         break
-                
+
                 if depth == 2:
                     return ret_mov
                 else:
@@ -211,8 +285,8 @@ class Player1:
                 for mov in cells_allowed:
                     tmp = self.genChild(node, temp_block, mov)
                     child = tmp[0]
-                    current_temp_block = tmp[1]                  
-                    
+                    current_temp_block = tmp[1]
+
                     temp = self.alphabeta(child, depth - 1, alpha, beta, True, mov, current_temp_block)
                     if v > temp:
                         v = temp
@@ -232,14 +306,14 @@ class Player1:
                         self.opp_flag = 'o'
                     else:
                         self.opp_flag = 'x'
-		
+
                 #Choose a move based on some algorithm, here it is a random move.
 		#return cells[random.randrange(len(cells))]
                 ret =  self.alphabeta(temp_board, 2,  -sys.maxsize - 1, sys.maxsize, True, old_move, temp_block)
                 return ret
 
 class Player2:
-	
+
 	def __init__(self):
 		# You may initialize your object here and use any variables for storing throughout the game
 		pass
@@ -286,19 +360,19 @@ def get_init_board_and_blockstatus():
 	for i in range(9):
 		row = ['-']*9
 		board.append(row)
-	
+
 	block_stat = ['-']*9
 	return board, block_stat
 
-# Checks if player has messed with the board. Don't mess with the board that is passed to your move function. 
+# Checks if player has messed with the board. Don't mess with the board that is passed to your move function.
 def verification_fails_board(board_game, temp_board_state):
-	return board_game == temp_board_state	
+	return board_game == temp_board_state
 
-# Checks if player has messed with the block. Don't mess with the block array that is passed to your move function. 
+# Checks if player has messed with the block. Don't mess with the block array that is passed to your move function.
 def verification_fails_block(block_stat, temp_block_stat):
-	return block_stat == temp_block_stat	
+	return block_stat == temp_block_stat
 
-#Gets empty cells from the list of possible blocks. Hence gets valid moves. 
+#Gets empty cells from the list of possible blocks. Hence gets valid moves.
 def get_empty_out_of(gameb, blal):
 	cells = []  # it will be list of tuples
 	#Iterate over possible blocks and get empty cells
@@ -321,7 +395,7 @@ def get_empty_out_of(gameb, blal):
 					if gameb[i][j] == '-':
 						cells.append((i,j))
 	return cells
-		
+
 # Returns True if move is valid
 def check_valid_move(game_board, block_stat, current_move, old_move):
 
@@ -329,12 +403,12 @@ def check_valid_move(game_board, block_stat, current_move, old_move):
 	# old_move is guaranteed to be correct
 	if type(current_move) is not tuple:
 		return False
-	
+
 	if len(current_move) != 2:
 		return False
 
 	a = current_move[0]
-	b = current_move[1]	
+	b = current_move[1]
 
 	if type(a) is not int or type(b) is not int:
 		return False
@@ -351,7 +425,7 @@ def check_valid_move(game_board, block_stat, current_move, old_move):
 	# We get all the empty cells in allowed blocks. If they're all full, we get all the empty cells in the entire board.
 	cells = get_empty_out_of(game_board, blocks_allowed)
 	print cells
-	#Checks if you made a valid move. 
+	#Checks if you made a valid move.
 	if current_move in cells:
 		return True
 	else:
@@ -361,7 +435,7 @@ def update_lists(game_board, block_stat, move_ret, fl):
 
 	game_board[move_ret[0]][move_ret[1]] = fl
 
-	block_no = (move_ret[0]/3)*3 + move_ret[1]/3	
+	block_no = (move_ret[0]/3)*3 + move_ret[1]/3
 	id1 = block_no/3
 	id2 = block_no%3
 	mflg = 0
@@ -382,7 +456,7 @@ def update_lists(game_board, block_stat, move_ret, fl):
                                 break
 	if mflg == 1:
 		block_stat[block_no] = fl
-	
+
 	return mflg
 
 #Check win
@@ -407,14 +481,14 @@ def terminal_state_reached(game_board, block_stat,point1,point2):
 					break
 		if smfl == 1:
 			return False, 'Continue'
-		
+
 		else:
 			if point1>point2:
 				return True, 'P1'
 			elif point2>point1:
 				return True, 'P2'
 			else:
-				return True, 'D'	
+				return True, 'D'
 
 
 def decide_winner_and_get_message(player,status, message):
@@ -451,17 +525,17 @@ def print_lists(gb, bs):
 
 	print "=========== Block Status ========="
 	for i in range(0, 9, 3):
-		print bs[i] + " " + bs[i+1] + " " + bs[i+2] 
+		print bs[i] + " " + bs[i+1] + " " + bs[i+2]
 	print "=================================="
 	print
-	
+
 
 def simulate(obj1,obj2):
-	
+
 	# Game board is a 9x9 list of lists & block_stat is a list of 9 elements indicating if a block has been won.
 	game_board, block_stat = get_init_board_and_blockstatus()
 
-	pl1 = obj1 
+	pl1 = obj1
 	pl2 = obj2
 
 	# Player with flag 'x' will start the game
@@ -479,10 +553,10 @@ def simulate(obj1,obj2):
 	print_lists(game_board, block_stat)
 
 	while(1): # Main game loop
-		
+
 		temp_board_state = game_board[:]
 		temp_block_stat = block_stat[:]
-	
+
 		signal.signal(signal.SIGALRM, handler)
 		signal.alarm(TIMEALLOWED)
 
@@ -493,17 +567,17 @@ def simulate(obj1,obj2):
 			print MESSAGE
 			break
 		signal.alarm(0)
-	
+
 		# Check if list is tampered.
 		if not (verification_fails_board(game_board, temp_board_state) and verification_fails_block(block_stat, temp_block_stat)):
 			WINNER, MESSAGE = decide_winner_and_get_message('P1', 'L',   'MODIFIED CONTENTS OF LISTS')
 			break
-		
+
 		# Check if the returned move is valid
 		if not check_valid_move(game_board, block_stat, ret_move_pl1, old_move):
 			WINNER, MESSAGE = decide_winner_and_get_message('P1', 'L',   'MADE AN INVALID MOVE')
 			break
-			
+
 
 		print "Player 1 made the move:", ret_move_pl1, 'with', pl1_fl
 		# Update the 'game_board' and 'block_stat' move
@@ -512,10 +586,10 @@ def simulate(obj1,obj2):
 		gamestatus, mesg =  terminal_state_reached(game_board, block_stat,p1_pts,p2_pts)
 		if gamestatus == True:
 			print_lists(game_board, block_stat)
-			WINNER, MESSAGE = decide_winner_and_get_message('P1', mesg,  'COMPLETE')	
+			WINNER, MESSAGE = decide_winner_and_get_message('P1', mesg,  'COMPLETE')
 			break
 
-		
+
 		old_move = ret_move_pl1
 		print_lists(game_board, block_stat)
 
@@ -534,13 +608,13 @@ def simulate(obj1,obj2):
         	if not (verification_fails_board(game_board, temp_board_state) and verification_fails_block(block_stat, temp_block_stat)):
 			WINNER, MESSAGE = decide_winner_and_get_message('P2', 'L',   'MODIFIED CONTENTS OF LISTS')
 			break
-			
+
         	if not check_valid_move(game_board, block_stat, ret_move_pl2, old_move):
 			WINNER, MESSAGE = decide_winner_and_get_message('P2', 'L',   'MADE AN INVALID MOVE')
 			break
 
         	print "Player 2 made the move:", ret_move_pl2, 'with', pl2_fl
-        
+
         	p2_pts += update_lists(game_board, block_stat, ret_move_pl2, pl2_fl)
 
         	# Now check if the last move resulted in a terminal state
@@ -552,7 +626,7 @@ def simulate(obj1,obj2):
         	else:
 			old_move = ret_move_pl2
 			print_lists(game_board, block_stat)
-	
+
 	print WINNER
 	print MESSAGE
 
@@ -565,10 +639,10 @@ if __name__ == '__main__':
 		print '                2 => Human vs. Random Player'
 		print '                3 => Human vs. Human'
 		sys.exit(1)
- 
+
 	obj1 = ''
 	obj2 = ''
-	option = sys.argv[1]	
+	option = sys.argv[1]
 	if option == '1':
 		obj1 = Player1()
 		obj2 = Player2()
@@ -588,5 +662,5 @@ if __name__ == '__main__':
 		simulate(obj2, obj1)
 	else:
 		simulate(obj1, obj2)
-		
-	
+
+
