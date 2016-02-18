@@ -8,11 +8,13 @@ class Player23:
 		pass
 
 	def move(self,temp_board,temp_block,old_move,flag):
-		blocks_allowed  = blocks_allowed(old_move, temp_block)
-		cells = cells_allowed(temp_board, blocks_allowed)
+		blocks = self.blocks_allowed(old_move, temp_block)
+                #print "team23 blocks",blocks
+		cells = self.cells_allowed(temp_board, blocks)
+                #print "cells",cells
 		return cells[random.randrange(len(cells))]
 
-        def blocks_allowed(old_move, block_stat):
+        def blocks_allowed(self,old_move,block_stat):
             blocks = []
 
             if old_move[0]%3 == 0:
@@ -40,15 +42,20 @@ class Player23:
                     blocks = [5,7]
 
             final_blocks_allowed = []
-            
+
             for block in blocks:
                 if block_stat[block] == '-':
                     final_blocks_allowed.append(block)
 
+            if not final_blocks_allowed:
+                blocks = [x for x in range(9)]
+                for block in blocks:
+                    if block_stat[block] == '-':
+                        final_blocks_allowed.append(block)
+
             return final_blocks_allowed
 
-        def cells_allowed(temp_board, blocks_allowed):
-
+        def cells_allowed(self,temp_board, blocks_allowed):
             cells = []
 
             for block in blocks_allowed:
@@ -61,17 +68,6 @@ class Player23:
                         if temp_board[i][j] == '-':
                             cells.append((i,j))
 
-            if not cells:
-
-                for i in xrange(9):
-
-                    start_row = (i / 3) * 3
-                    start_col = ((i) % 3) * 3
-
-                    for j in xrange(start_row, start_row + 3):
-                        for k in xrange(start_col, start_col + 3):
-                            if temp_board[j][k] == '-':
-                                cells.append((j,k))
 
             return cells
 
