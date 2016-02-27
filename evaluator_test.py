@@ -17,7 +17,11 @@ import sys
 import random
 import signal
 import copy
+import team23
 
+MAXDEPTH = 4
+
+me = 0
 
 def handler(signum, frame):
     #print 'Signal handler called with signal', signum
@@ -83,6 +87,7 @@ class Player1:
             for block in blocks:
                 if block_stat[block] == '-':
                     final_blocks_allowed.append(block)
+            
 
             return final_blocks_allowed
 
@@ -117,6 +122,8 @@ class Player1:
         def heuristic(self, node, temp_block):
 
             utility = 0
+            #return 100
+
 
             #=========================Local======================
             for i in xrange(9):
@@ -134,12 +141,10 @@ class Player1:
                 for each in self.win_pos:
 
                     if i_stat[each[0]] == self.flag and i_stat[each[1]] == self.flag and i_stat[each[2]] == self.flag:
-                        temp_block_stat[i] = self.flag
                         utility += 5
                         break
 
                     if i_stat[each[0]] == self.opp_flag and i_stat[each[1]] == self.opp_flag and i_stat[each[2]] == self.opp_flag:
-                        temp_block_stat[i] = self.opp_flag
                         utility -= 5
                         break
                 #Local twos
@@ -152,14 +157,14 @@ class Player1:
                         utility -= 4
 
                 #Local corner
-                for each in corner:
+                for each in self.corners:
                     if i_stat[each] == self.flag:
                         utility +=2
                     if i_stat[each] == self.opp_flag:
                         utility -=2
 
                 #Local rest
-                for each in rest:
+                for each in self.rest:
                     if i_stat[each] == self.flag:
                         utility +=1
                     if i_stat[each] == self.opp_flag:
@@ -170,8 +175,6 @@ class Player1:
                         utility +=3
                     if i_stat[4] == self.opp_flag:
                         utility -=3
-
-
 
             #================Global===============
 
@@ -195,14 +198,14 @@ class Player1:
                         utility -= 5
 
             #Global corner
-            for each in corner:
+            for each in self.corners:
                     if temp_block[each] == self.flag:
                         utility +=3
                     if temp_block[each] == self.opp_flag:
                         utility -=3
 
             #Global rest
-            for each in rest:
+            for each in self.rest:
                     if temp_block[each] == self.flag:
                         utility +=2
                     if temp_block[each] == self.opp_flag:
@@ -220,11 +223,11 @@ class Player1:
 
         def genChild(self, node, temp_block, mov, current_flag):
 
-            temp_node = copy.copy(node)
+            temp_node =copy.deepcopy(node)
 
             temp_node[mov[0]][mov[1]] = current_flag
 
-            current_temp_block = copy.copy(temp_block)
+            current_temp_block = copy.deepcopy(temp_block)
 
             block_num = (mov[0] / 3) * 3 + (mov[1] / 3)
 
@@ -252,36 +255,33 @@ class Player1:
 
 
         def alphabeta(self, node, depth, alpha, beta, maximizingPlayer, old_move, temp_block):
-
-            print "inside"
-            print self.gctr
-            self.gctr += 1
             
-            print "hello"
-
-            blocks_allowed = self.blocks_allowed(node, temp_block)
+            if depth == 0:
+                hret = self.heuristic(copy.deepcopy(node), copy.deepcopy(temp_block))
+                return hret
             
-            print blocks_allowed
-
-            cells_allowed = self.cells_allowed(node, blocks_allowed)
-
-
+            
             if old_move == (-1, -1):
-		return cells_allowed[random.randrange(len(cells_allowed))]
+                l = range(9)
+		return ( l[random.randrange(9)], l[random.randrange(9)] )
+
+            blocks = self.blocks_allowed(old_move, temp_block)
+            
+            cells_allowed = self.cells_allowed(node, blocks)
 
             ret_mov = " "
-
-            if depth == 0:
-                return self.heuristic(node, temp_block)
 
             if maximizingPlayer:
                 v = -sys.maxsize - 1
                 for mov in cells_allowed:
-                    tmp = self.genChild(node, temp_block, mov, self.flag)
+                    tmp = self.genChild(copy.deepcopy(node), copy.deepcopy(temp_block), copy.deepcopy(mov), copy.deepcopy(self.flag))
                     child = tmp[0]
                     current_temp_block = tmp[1]
-
-                    temp = self.alphabeta(child, depth - 1, alpha, beta, False, mov, current_temp_block)
+            #        print "going for child" 
+            #        print_lists(child, current_temp_block)
+                    temp = self.alphabeta(copy.deepcopy(child), depth - 1, copy.deepcopy(alpha), copy.deepcopy(beta), False, copy.deepcopy(mov), copy.deepcopy(current_temp_block))
+            #        print "returned for child"
+            #        print_lists(child, current_temp_block)
                     if v < temp:
                         v = temp
                         ret_mov = mov
@@ -289,7 +289,7 @@ class Player1:
                     if beta <= alpha:
                         break
 
-                if depth == 2:
+                if depth == MAXDEPTH:
                     return ret_mov
                 else:
                     return v
@@ -297,18 +297,22 @@ class Player1:
             else:
                 v = sys.maxsize
                 for mov in cells_allowed:
-                    tmp = self.genChild(node, temp_block, mov, self.opp_flag)
+                    tmp = self.genChild(copy.deepcopy(node), copy.deepcopy(temp_block), copy.deepcopy(mov), copy.deepcopy(self.opp_flag))
                     child = tmp[0]
                     current_temp_block = tmp[1]
+             #       print "going for child"
+             #       print_lists(child, current_temp_block)
 
-                    temp = self.alphabeta(child, depth - 1, alpha, beta, True, mov, current_temp_block)
+                    temp = self.alphabeta(copy.deepcopy(child), depth - 1, copy.deepcopy(alpha), copy.deepcopy(beta), True, copy.deepcopy(mov), copy.deepcopy(current_temp_block))
+             #       print "returned for child"
+             #       print_lists(child, current_temp_block)
                     if v > temp:
                         v = temp
                         ret_mov = mov
                     beta = min(beta, v)
                     if beta <= alpha:
                         break
-                if depth == 2:
+                if depth == MAXDEPTH:
                     return ret_mov
                 else:
                     return v
@@ -323,7 +327,8 @@ class Player1:
 
                 #Choose a move based on some algorithm, here it is a random move.
 		#return cells[random.randrange(len(cells))]
-                ret =  self.alphabeta(temp_board, 2,  -sys.maxsize - 1, sys.maxsize, True, old_move, temp_block)
+                ret =  self.alphabeta(copy.deepcopy(temp_board), MAXDEPTH,  -sys.maxsize - 1, sys.maxsize, True, copy.deepcopy(old_move), copy.deepcopy(temp_block))
+                #print "return is ", ret
                 return ret
 
 class Player2:
@@ -640,8 +645,11 @@ def simulate(obj1,obj2):
         	else:
 			old_move = ret_move_pl2
 			print_lists(game_board, block_stat)
-
-	print WINNER
+        if(WINNER==me):
+            print "TEAM 23 won"
+        else:
+            print "TEAM 23 lost"
+	#print WINNER
 	print MESSAGE
 
 if __name__ == '__main__':
@@ -658,11 +666,11 @@ if __name__ == '__main__':
 	obj2 = ''
 	option = sys.argv[1]
 	if option == '1':
-		obj1 = Player1()
+		obj1 = team23.Player23()
 		obj2 = Player2()
 
 	elif option == '2':
-		obj1 = Player1()
+		obj1 = team23.Player23()
 		obj2 = ManualPlayer()
 	elif option == '3':
 		obj1 = ManualPlayer()
@@ -673,8 +681,8 @@ if __name__ == '__main__':
 
 	num = random.uniform(0,1)
 	if num > 0.5:
+                me = 'P2'
 		simulate(obj2, obj1)
 	else:
+                me = 'P1'
 		simulate(obj1, obj2)
-
-

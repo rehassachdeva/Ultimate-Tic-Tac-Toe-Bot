@@ -3,61 +3,92 @@ import random
 import signal
 import copy
 
+MAXDEPTH = 5
+
 class Player23:
+    
+        def __init__(self):
+            
+            self.win_pos = [
+                    (0, 1, 2),
+                    (3, 4, 5),
+                    (6, 7, 8),
+                    (0, 3, 6),
+                    (1, 4, 7),
+                    (2, 5, 8),
+                    (0, 4, 8),
+                    (2, 4, 6)
+                    ]
 
-	def __init__(self):
-	    	self.win_pos = [(0, 1, 2), (3, 4, 5), (6, 7, 8), (0, 3, 6), (1, 4, 7), (2, 5, 8), (0, 4, 8), (2, 4, 6)]
-            	self.twos = []
-		self.corners = [0, 2, 6, 8]
-		self.rest = [1, 3, 5, 7]
-		self.moves = " "
-		self.flag = " "
-		self.block_stat = " "
-		self.opp_flag = " "
-		self.gctr = 0
+            self.twos = []
 
-		for each in self.win_pos:
-		        self.twos.append((each[0],each[1]))
-		        self.twos.append((each[1],each[2]))
-		        self.twos.append((each[0],each[1]))
+            for each in self.win_pos:
+                self.twos.append((each[0],each[1]))
+                self.twos.append((each[1],each[2]))
+                self.twos.append((each[0],each[1]))
 
-	def move(self,board,block,move,flag):
-                temp_board=copy.deepcopy(board)
-                temp_block=copy.deepcopy(block)
-                old_move=copy.deepcopy(move)
+            self.corners = [0, 2, 6, 8]
 
-		blocks = self.blocks_allowed(old_move, temp_block)
-                print "team23 blocks",blocks
-		cells = self.cells_allowed(temp_board, blocks)
-                print "cells",cells
-		#return cells[random.randrange(len(cells))]
-		best_move=self.pick(temp_board,temp_block,cells,flag)
-		if best_move in cells:
-		        print "my move", best_move
-			return best_move
-		else:
-			print "illegal",best_move
+            self.rest = [1, 3, 5, 7]
 
-	def pick(self,node,block_stat,movs,current_flag):
-		best_score=-100000000000000000
-		best_move=0
-		for mov in movs:
-			temp_node = copy.deepcopy(node)
+            self.flag = " "
 
-			temp_node[mov[0]][mov[1]] = current_flag
+            self.opp_flag = " "
 
-			block_stat_temp = copy.deepcopy(block_stat)
-			temp_score=self.heuristic(temp_node, block_stat_temp)
-			if(temp_score>best_score):
-				best_score=temp_score
-				best_move=mov
+            self.local_score = {
+                    "winpos" : 5,
+                    "two" : 4,
+                    "center" : 3,
+                    "corner" : 2,
+                    "rest" : 1
+                    }
+            
+            self.global_score = {
+                    "winpos" : 10000,
+                    "two" : 100,
+                    "center" : 50,
+                    "corner" : 30,
+                    "rest" : 10
+                    }
+            
+            self.llookup = {
+                    'x' : {},
+                    'o' : {}
+                    }
+            
+            self.glookup = {
+                    'x' : {},
+                    'o' : {}
+                    }
 
+            self.memoization()
 
-		return best_move
+        def hsh(self, temp_node):
+            return tuple(temp_node)
 
-        def blocks_allowed(self,old_move,block_stat):
+        def memoization(self):
+            
+            symbol = ['x', 'o', '-']
+            
+            for enum in xrange(0, 3**9):
+                temp = enum
+                node = []
+
+                for i in xrange(0, 9):
+                    node.append(symbol[temp % 3])
+                    temp /= 3
+
+                hshed = self.hsh(node)
+
+                self.llookup['x'][hshed] = self.heuristic_local(node, 'x')
+                self.llookup['o'][hshed] = -self.llookup['x'][hshed]
+                self.glookup['x'][hshed] = self.heuristic_global(node, 'x')
+                self.glookup['o'][hshed] = -self.glookup['x'][hshed]
+
+        def blocks_allowed(self, old_move, block_stat):
+            
             blocks = []
-
+            
             if old_move[0]%3 == 0:
                 if old_move[1]%3 == 0:
                     blocks = [1,3]
@@ -88,15 +119,19 @@ class Player23:
                 if block_stat[block] == '-':
                     final_blocks_allowed.append(block)
 
+            if old_move == (-1, -1):
+                final_blocks_allowed = []
+                
             if not final_blocks_allowed:
                 blocks = [x for x in range(9)]
                 for block in blocks:
                     if block_stat[block] == '-':
                         final_blocks_allowed.append(block)
-
+            
             return final_blocks_allowed
 
-        def cells_allowed(self,temp_board, blocks_allowed):
+        def cells_allowed(self, temp_board, blocks_allowed):
+
             cells = []
 
             for block in blocks_allowed:
@@ -111,110 +146,214 @@ class Player23:
 
             return cells
 
-	def heuristic(self, node, temp_block):
+        def heuristic(self, node, temp_block):
 
             utility = 0
 
-            #=========================Local======================
             for i in xrange(9):
-
                 start_row = (i / 3) * 3
                 start_col = ((i) % 3) * 3
-
                 i_stat = []
 
                 for j in xrange(start_row, start_row + 3):
                     for k in xrange(start_col, start_col + 3):
                         i_stat.append(node[j][k])
+                utility += self.llookup[self.flag][self.hsh(i_stat)]
+            
+            bl_stat = copy.deepcopy(temp_block)
+
+            utility += self.glookup[self.flag][self.hsh(bl_stat)]
+            
+            return utility
+
+	def heuristic_local(self, node, curr_flag):
+
+                curr_opp_flag = " "
+                if curr_flag == 'x':
+                    curr_opp_flag = 'o'
+                else:
+                    curr_opp_flag = 'x'
+
+            	utility = 0
+                
+                i_stat = copy.deepcopy(node)
 
                 #Local win
                 for each in self.win_pos:
-
-                    if i_stat[each[0]] == self.flag and i_stat[each[1]] == self.flag and i_stat[each[2]] == self.flag:
-                        temp_block_stat[i] = self.flag
-                        utility += 5
+                    if i_stat[each[0]] == curr_flag and i_stat[each[1]] == curr_flag and i_stat[each[2]] == curr_flag:
+                        utility += self.local_score["winpos"]
+                        break
+                    if i_stat[each[0]] == curr_opp_flag and i_stat[each[1]] == curr_opp_flag and i_stat[each[2]] == curr_opp_flag:
+                        utility -= self.local_score["winpos"]
                         break
 
-                    if i_stat[each[0]] == self.opp_flag and i_stat[each[1]] == self.opp_flag and i_stat[each[2]] == self.opp_flag:
-                        temp_block_stat[i] = self.opp_flag
-                        utility -= 5
-                        break
                 #Local twos
                 for each in self.twos:
-
-                    if i_stat[each[0]] == self.flag and i_stat[each[1]] == self.flag:
-                        utility += 4
-
-                    if i_stat[each[0]] == self.opp_flag and i_stat[each[1]] == self.opp_flag:
-                        utility -= 4
+                    if i_stat[each[0]] == curr_flag and i_stat[each[1]] == curr_flag:
+                        utility +=  self.local_score["two"]
+                    if i_stat[each[0]] == curr_opp_flag and i_stat[each[1]] == curr_opp_flag:
+                        utility -= self.local_score["two"]
 
                 #Local corner
                 for each in self.corners:
-                    if i_stat[each] == self.flag:
-                        utility +=2
-                    if i_stat[each] == self.opp_flag:
-                        utility -=2
+                    if i_stat[each] == curr_flag:
+                        utility += self.local_score["corner"]
+                    if i_stat[each] == curr_opp_flag:
+                        utility -= self.local_score["corner"]
 
                 #Local rest
                 for each in self.rest:
-                    if i_stat[each] == self.flag:
-                        utility +=1
-                    if i_stat[each] == self.opp_flag:
-                        utility -=1
+                    if i_stat[each] == curr_flag:
+                        utility += self.local_score["rest"]
+                    if i_stat[each] == curr_opp_flag:
+                        utility -= self.local_score["rest"]
 
                 #Local center
-                    if i_stat[4] == self.flag:
-                        utility +=3
-                    if i_stat[4] == self.opp_flag:
-                        utility -=3
+                    if i_stat[4] == curr_flag:
+                        utility += self.local_score["center"]
+                    if i_stat[4] == curr_opp_flag:
+                        utility -= self.local_score["center"]
 
+		return utility
 
+	def heuristic_global(self, node, curr_flag):
 
-            #================Global===============
+                curr_opp_flag = " "
+                if curr_flag == 'x':
+                    curr_opp_flag = 'o'
+                else:
+                    curr_opp_flag = 'x'
 
-            #Global win
+            	utility = 0
+                
+                i_stat = copy.deepcopy(node)
+
+                #Global win
+                for each in self.win_pos:
+                    if i_stat[each[0]] == curr_flag and i_stat[each[1]] == curr_flag and i_stat[each[2]] == curr_flag:
+                        utility += self.global_score["winpos"]
+                        break
+                    if i_stat[each[0]] == curr_opp_flag and i_stat[each[1]] == curr_opp_flag and i_stat[each[2]] == curr_opp_flag:
+                        utility -= self.global_score["winpos"]
+                        break
+
+                #Global twos
+                for each in self.twos:
+                    if i_stat[each[0]] == curr_flag and i_stat[each[1]] == curr_flag:
+                        utility +=  self.global_score["two"]
+                    if i_stat[each[0]] == curr_opp_flag and i_stat[each[1]] == curr_opp_flag:
+                        utility -= self.global_score["two"]
+
+                #Global corner
+                for each in self.corners:
+                    if i_stat[each] == curr_flag:
+                        utility += self.global_score["corner"]
+                    if i_stat[each] == curr_opp_flag:
+                        utility -= self.global_score["corner"]
+
+                #Global rest
+                for each in self.rest:
+                    if i_stat[each] == curr_flag:
+                        utility += self.global_score["rest"]
+                    if i_stat[each] == curr_opp_flag:
+                        utility -= self.global_score["rest"]
+
+                #Global center
+                    if i_stat[4] == curr_flag:
+                        utility += self.global_score["center"]
+                    if i_stat[4] == curr_opp_flag:
+                        utility -= self.global_score["center"]
+
+		return utility
+
+        def genChild(self, node, temp_block, mov, current_flag):
+
+            temp_node = copy.deepcopy(node)
+            temp_node[mov[0]][mov[1]] = current_flag
+            current_temp_block = copy.deepcopy(temp_block)
+
+            block_num = (mov[0] / 3) * 3 + (mov[1] / 3)
+            
+            temp_stat = []
+            start_row = (block_num / 3) * 3
+            start_col = ((block_num) % 3) * 3
+            for j in xrange(start_row, start_row + 3):
+                for k in xrange(start_col, start_col + 3):
+                    temp_stat.append(temp_node[j][k])
+
             for each in self.win_pos:
-            	if temp_block[each[0]] == self.flag and temp_block[each[1]] == self.flag and temp_block[each[2]] == self.flag:
-                    utility += 10000
+                if temp_stat[each[0]] == self.flag and temp_stat[each[1]] == self.flag and temp_stat[each[2]] == self.flag:
+                    current_temp_block[block_num] = self.flag
+                    break
+                if temp_stat[each[0]] == self.opp_flag and temp_stat[each[1]] == self.opp_flag and temp_stat[each[2]] == self.opp_flag:
+                    current_temp_block[block_num] = self.opp_flag
                     break
 
-                if temp_block[each[0]] == self.opp_flag and temp_block[each[1]] == self.opp_flag and temp_block[each[2]] == self.opp_flag:
-                    utility -= 10000
-                    break
-
-            #Global twos
-            for each in self.twos:
-
-                    if temp_block[each[0]] == self.flag and temp_block[each[1]] == self.flag:
-                        utility += 5
-
-                    if temp_block[each[0]] == self.opp_flag and temp_block[each[1]] == self.opp_flag:
-                        utility -= 5
-
-            #Global corner
-            for each in self.corners:
-                    if temp_block[each] == self.flag:
-                        utility +=3
-                    if temp_block[each] == self.opp_flag:
-                        utility -=3
-
-            #Global rest
-            for each in self.rest:
-                    if temp_block[each] == self.flag:
-                        utility +=2
-                    if temp_block[each] == self.opp_flag:
-                        utility -=2
-
-            #Global center
-                    if temp_block[4] == self.flag:
-                        utility +=10
-                    if temp_block[4] == self.opp_flag:
-                        utility -=10
+            return (temp_node, current_temp_block)
 
 
+        def alphabeta(self, node, depth, alpha, beta, maximizingPlayer, old_move, temp_block):            
+            
+            if depth == 0:
+                return self.heuristic(copy.deepcopy(node), copy.deepcopy(temp_block))
+            
+            blocks = self.blocks_allowed(old_move, temp_block)
+            
+            cells_allowed = self.cells_allowed(node, blocks)
 
-            return utility
+            ret_mov = " "
 
+            if maximizingPlayer:
+                v = -sys.maxsize - 1
+                
+                for mov in cells_allowed:
+                    tmp = self.genChild(copy.deepcopy(node), copy.deepcopy(temp_block), copy.deepcopy(mov), copy.deepcopy(self.flag))
+                    child = tmp[0]
+                    current_temp_block = tmp[1]
 
+                    temp = self.alphabeta(copy.deepcopy(child), depth - 1, copy.deepcopy(alpha), copy.deepcopy(beta), False, copy.deepcopy(mov), copy.deepcopy(current_temp_block))
 
+                    if v < temp:
+                        v = temp
+                        ret_mov = mov
+                    alpha = max(alpha, v)
+                    
+                    if beta <= alpha:
+                        break
 
+                if depth == MAXDEPTH:
+                    return ret_mov
+                else:
+                    return v
+
+            else:
+                v = sys.maxsize
+
+                for mov in cells_allowed:
+                    tmp = self.genChild(copy.deepcopy(node), copy.deepcopy(temp_block), copy.deepcopy(mov), copy.deepcopy(self.opp_flag))
+                    child = tmp[0]
+                    current_temp_block = tmp[1]
+
+                    temp = self.alphabeta(copy.deepcopy(child), depth - 1, copy.deepcopy(alpha), copy.deepcopy(beta), True, copy.deepcopy(mov), copy.deepcopy(current_temp_block))
+                    
+                    if v > temp:
+                        v = temp
+                        ret_mov = mov
+                    beta = min(beta, v)
+                    
+                    if beta <= alpha:
+                        break
+                
+                if depth == MAXDEPTH:
+                    return ret_mov
+                else:
+                    return v
+
+	def move(self, temp_board, temp_block, old_move, flag):
+                self.flag = flag
+                if self.opp_flag == " ":
+                    if self.flag == 'x':
+                        self.opp_flag = 'o'
+                    else:
+                        self.opp_flag = 'x'
+                return self.alphabeta(copy.deepcopy(temp_board), MAXDEPTH,  -sys.maxsize - 1, sys.maxsize, True, copy.deepcopy(old_move), copy.deepcopy(temp_block))
