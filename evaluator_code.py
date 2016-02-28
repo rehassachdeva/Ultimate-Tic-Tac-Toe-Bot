@@ -17,6 +17,7 @@ import sys
 import random
 import signal
 import team23
+import heurbot
 
 class TimedOutExc(Exception):
         pass
@@ -401,10 +402,10 @@ if __name__ == '__main__':
 
 	elif option == '2':
 		obj1 = team23.Player23()
-		obj2 = ManualPlayer()
+		obj2 = heurbot.heurbot()
 	elif option == '3':
-		obj1 = Player2()
-		obj2 = Player2()
+		obj1 = team23.Player23()
+		obj2 = team23.Player23()
 	else:
 		print 'Invalid option'
 		sys.exit(1)
