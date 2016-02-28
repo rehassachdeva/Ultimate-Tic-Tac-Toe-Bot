@@ -43,19 +43,19 @@ class Player23:
             self.opp_flag = " "
 
             self.local_score = {
-                    "winpos" : 500,
-                    "two" : 100,
-                    "center" : 50,
-                    "corner" : 20,
-                    "rest" : 5
+                    "winpos" : 20,
+                    "two" : 10,
+                    "center" : 5,
+                    "corner" : 4,
+                    "rest" : 3
                     }
             
             self.global_score = {
-                    "winpos" : 500000,
-                    "two" : 100000,
-                    "center" : 50000,
-                    "corner" : 20000,
-                    "rest" : 5000
+                    "winpos" : 10000,
+                    "two" : 100,
+                    "center" : 50,
+                    "corner" : 40,
+                    "rest" : 30
                     }
             
             self.llookup = {
