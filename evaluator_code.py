@@ -18,7 +18,6 @@ import random
 import signal
 import team23
 
-me=0
 class TimedOutExc(Exception):
         pass
 
@@ -31,15 +30,13 @@ class ManualPlayer:
 	def __init__(self):
 		pass
 	def move(self, temp_board, temp_block, old_move, flag):
-		print 'Enter your move: <format:row column> (you\'re playing with', flag + ")"
+		print 'Enter your move: <format:row column> (you\'re playing with', flag + ")"	
 		mvp = raw_input()
 		mvp = mvp.split()
 		return (int(mvp[0]), int(mvp[1]))
-
-
-
+	
 class Player1:
-
+	
 	def __init__(self):
 		# You may initialize your object here and use any variables for storing throughout the game
 		pass
@@ -53,7 +50,7 @@ class Player1:
 		return cells[random.randrange(len(cells))]
 
 class Player2:
-
+	
 	def __init__(self):
 		# You may initialize your object here and use any variables for storing throughout the game
 		pass
@@ -100,19 +97,19 @@ def get_init_board_and_blockstatus():
 	for i in range(9):
 		row = ['-']*9
 		board.append(row)
-
+	
 	block_stat = ['-']*9
 	return board, block_stat
 
-# Checks if player has messed with the board. Don't mess with the board that is passed to your move function.
+# Checks if player has messed with the board. Don't mess with the board that is passed to your move function. 
 def verification_fails_board(board_game, temp_board_state):
-	return board_game == temp_board_state
+	return board_game == temp_board_state	
 
-# Checks if player has messed with the block. Don't mess with the block array that is passed to your move function.
+# Checks if player has messed with the block. Don't mess with the block array that is passed to your move function. 
 def verification_fails_block(block_stat, temp_block_stat):
-	return block_stat == temp_block_stat
+	return block_stat == temp_block_stat	
 
-#Gets empty cells from the list of possible blocks. Hence gets valid moves.
+#Gets empty cells from the list of possible blocks. Hence gets valid moves. 
 def get_empty_out_of(gameb, blal,block_stat):
 	cells = []  # it will be list of tuples
 	#Iterate over possible blocks and get empty cells
@@ -140,7 +137,7 @@ def get_empty_out_of(gameb, blal,block_stat):
 					if gameb[i][j] == '-':
 						cells.append((i,j))
 	return cells
-
+		
 # Returns True if move is valid
 def check_valid_move(game_board, block_stat, current_move, old_move):
 
@@ -148,12 +145,12 @@ def check_valid_move(game_board, block_stat, current_move, old_move):
 	# old_move is guaranteed to be correct
 	if type(current_move) is not tuple:
 		return False
-
+	
 	if len(current_move) != 2:
 		return False
 
 	a = current_move[0]
-	b = current_move[1]
+	b = current_move[1]	
 
 	if type(a) is not int or type(b) is not int:
 		return False
@@ -168,7 +165,7 @@ def check_valid_move(game_board, block_stat, current_move, old_move):
 	blocks_allowed  = determine_blocks_allowed(old_move, block_stat)
 	# We get all the empty cells in allowed blocks. If they're all full, we get all the empty cells in the entire board.
 	cells = get_empty_out_of(game_board, blocks_allowed, block_stat)
-	#Checks if you made a valid move.
+	#Checks if you made a valid move. 
 	if current_move in cells:
 		return True
 	else:
@@ -178,7 +175,7 @@ def update_lists(game_board, block_stat, move_ret, fl):
 
 	game_board[move_ret[0]][move_ret[1]] = fl
 
-	block_no = (move_ret[0]/3)*3 + move_ret[1]/3
+	block_no = (move_ret[0]/3)*3 + move_ret[1]/3	
 	id1 = block_no/3
 	id2 = block_no%3
 	mflg = 0
@@ -209,7 +206,7 @@ def update_lists(game_board, block_stat, move_ret, fl):
 		block_stat[block_no] = 'D'
 	if mflg == 1:
 		block_stat[block_no] = fl
-
+	
 	return mflg
 
 #Check win
@@ -233,14 +230,14 @@ def terminal_state_reached(game_board, block_stat,point1,point2):
 				break
 		if smfl == 1:
 			return False, 'Continue'
-
+		
 		else:
 			if point1>point2:
 				return True, 'P1'
 			elif point2>point1:
 				return True, 'P2'
 			else:
-				return True, 'D'
+				return True, 'D'	
 
 
 def decide_winner_and_get_message(player,status, message):
@@ -277,17 +274,17 @@ def print_lists(gb, bs):
 
 	print "=========== Block Status ========="
 	for i in range(0, 9, 3):
-		print bs[i] + " " + bs[i+1] + " " + bs[i+2]
+		print bs[i] + " " + bs[i+1] + " " + bs[i+2] 
 	print "=================================="
 	print
-
+	
 
 def simulate(obj1,obj2):
-
+	
 	# Game board is a 9x9 list of lists & block_stat is a list of 9 elements indicating if a block has been won.
 	game_board, block_stat = get_init_board_and_blockstatus()
 
-	pl1 = obj1
+	pl1 = obj1 
 	pl2 = obj2
 
 	# Player with flag 'x' will start the game
@@ -305,32 +302,32 @@ def simulate(obj1,obj2):
 	print_lists(game_board, block_stat)
 
 	while(1): # Main game loop
-
+		
 		temp_board_state = game_board[:]
 		temp_block_stat = block_stat[:]
-
+	
 		signal.signal(signal.SIGALRM, handler)
 		signal.alarm(TIMEALLOWED)
-#		ret_move_pl1 = pl1.move(temp_board_state, temp_block_stat, old_move, pl1_fl)
+		ret_move_pl1 = pl1.move(temp_board_state, temp_block_stat, old_move, pl1_fl)
 
 		try:
 			ret_move_pl1 = pl1.move(temp_board_state, temp_block_stat, old_move, pl1_fl)
 		except:
 			WINNER, MESSAGE = decide_winner_and_get_message('P1', 'L',   'TIMED OUT')
-		#	print MESSAGE
+			print MESSAGE
 			break
 		signal.alarm(0)
-
+	
 		# Check if list is tampered.
 		if not (verification_fails_board(game_board, temp_board_state) and verification_fails_block(block_stat, temp_block_stat)):
 			WINNER, MESSAGE = decide_winner_and_get_message('P1', 'L',   'MODIFIED CONTENTS OF LISTS')
 			break
-
+		
 		# Check if the returned move is valid
 		if not check_valid_move(game_board, block_stat, ret_move_pl1, old_move):
 			WINNER, MESSAGE = decide_winner_and_get_message('P1', 'L',   'MADE AN INVALID MOVE')
 			break
-
+			
 
 		print "Player 1 made the move:", ret_move_pl1, 'with', pl1_fl
 		# Update the 'game_board' and 'block_stat' move
@@ -339,10 +336,10 @@ def simulate(obj1,obj2):
 		gamestatus, mesg =  terminal_state_reached(game_board, block_stat,p1_pts,p2_pts)
 		if gamestatus == True:
 			print_lists(game_board, block_stat)
-			WINNER, MESSAGE = decide_winner_and_get_message('P1', mesg,  'COMPLETE')
+			WINNER, MESSAGE = decide_winner_and_get_message('P1', mesg,  'COMPLETE')	
 			break
 
-
+		
 		old_move = ret_move_pl1
 		print_lists(game_board, block_stat)
 
@@ -362,13 +359,13 @@ def simulate(obj1,obj2):
         	if not (verification_fails_board(game_board, temp_board_state) and verification_fails_block(block_stat, temp_block_stat)):
 			WINNER, MESSAGE = decide_winner_and_get_message('P2', 'L',   'MODIFIED CONTENTS OF LISTS')
 			break
-
+			
         	if not check_valid_move(game_board, block_stat, ret_move_pl2, old_move):
 			WINNER, MESSAGE = decide_winner_and_get_message('P2', 'L',   'MADE AN INVALID MOVE')
 			break
 
         	print "Player 2 made the move:", ret_move_pl2, 'with', pl2_fl
-
+        
         	p2_pts += update_lists(game_board, block_stat, ret_move_pl2, pl2_fl)
 
         	# Now check if the last move resulted in a terminal state
@@ -381,11 +378,8 @@ def simulate(obj1,obj2):
 			old_move = ret_move_pl2
 			print_lists(game_board, block_stat)
 
-        if(WINNER==me):
-                print "TEAM 23 won"
-        else:
-                print "TEAM 23 lost"
 	print WINNER
+        print string
 	print MESSAGE
 
 if __name__ == '__main__':
@@ -406,21 +400,19 @@ if __name__ == '__main__':
 		obj2 = Player2()
 
 	elif option == '2':
-		obj1 = Player1()
+		obj1 = team23.Player23()
 		obj2 = ManualPlayer()
 	elif option == '3':
-		obj1 = ManualPlayer()
-		obj2 = ManualPlayer()
+		obj1 = Player2()
+		obj2 = Player2()
 	else:
 		print 'Invalid option'
 		sys.exit(1)
 
 	num = random.uniform(0,1)
 	if num > 0.5:
-                me = 'P2'
+                string = "P1 is obj2"
 		simulate(obj2, obj1)
 	else:
-                me = 'P1'
+                string = "P1 is obj1"
 		simulate(obj1, obj2)
-
-
