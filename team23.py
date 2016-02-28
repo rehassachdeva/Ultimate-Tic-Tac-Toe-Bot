@@ -8,6 +8,8 @@ class Player23:
         def __init__(self):
 
             self.maxdepth = 5
+
+            self.inf = 1000000000000
             
             self.win_pos = [
                     (0, 1, 2),
@@ -313,7 +315,7 @@ class Player23:
             ret_mov = " "
 
             if maximizingPlayer:
-                v = -sys.maxsize - 1
+                v = -self.inf
                 
                 for mov in cells_allowed:
                     tmp = self.genChild(node, temp_block, mov, self.flag)
@@ -336,7 +338,7 @@ class Player23:
                     return v
 
             else:
-                v = sys.maxsize
+                v = self.inf
 
                 for mov in cells_allowed:
                     tmp = self.genChild(node, temp_block, mov, self.opp_flag)
@@ -381,4 +383,4 @@ class Player23:
                 #    self.maxdepth = 6
                 #if self.num_moves > 8:
                 #    self.maxdepth = 5
-                return self.alphabeta(copy.deepcopy(temp_board), self.maxdepth,  -sys.maxsize - 1, sys.maxsize, True, copy.deepcopy(old_move), copy.deepcopy(temp_block))
+                return self.alphabeta(copy.deepcopy(temp_board), self.maxdepth,  -self.inf, self.inf, True, copy.deepcopy(old_move), copy.deepcopy(temp_block))
