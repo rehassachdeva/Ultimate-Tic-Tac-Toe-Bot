@@ -2,12 +2,17 @@ import sys
 import random
 import signal
 import copy
+import time
 
 class Player23:
     
         def __init__(self):
 
             self.maxdepth = 5
+
+            self.came = 0
+
+            self.timed_out = False;
 
             self.inf = 1000000000000
             
@@ -23,8 +28,6 @@ class Player23:
                     ]
 
             self.twos = []
-
-            self.num_moves = 0
 
             for each in self.win_pos:
                 self.twos.append((each[0],each[1]))
@@ -170,6 +173,10 @@ class Player23:
             
             bl_stat = copy.deepcopy(temp_block)
 
+            for i in xrange(9):
+                if bl_stat[i] == 'D':
+                    bl_stat[i] = '-'
+
             utility += self.glookup[self.flag][self.hsh(bl_stat)]
             
             return utility
@@ -301,10 +308,14 @@ class Player23:
 
 
         def alphabeta(self, node, depth, alpha, beta, maximizingPlayer, old_move, temp_block):            
+
+            if depth == 0 or self.timed_out == True:
+                    return self.heuristic(copy.deepcopy(node), copy.deepcopy(temp_block))
             
-            if depth == 0:
+            if time.time() - self.came > 5.8:
+                self.timed_out = True
                 return self.heuristic(copy.deepcopy(node), copy.deepcopy(temp_block))
-            
+
             blocks = self.blocks_allowed(old_move, temp_block)
             
             cells_allowed = self.cells_allowed(node, blocks, temp_block)
@@ -361,26 +372,13 @@ class Player23:
                     return v
 
 	def move(self, temp_board, temp_block, old_move, flag):
-                self.num_moves += 1
+                self.came = time.time()
+                self.timed_out = False
                 self.flag = flag
                 if self.opp_flag == " ":
                     if self.flag == 'x':
                         self.opp_flag = 'o'
                     else:
                         self.opp_flag = 'x'
-                blocks = self.blocks_allowed(old_move, temp_block)
-            
-                cells_allowed = self.cells_allowed(temp_board, blocks, temp_block)
-                if len(cells_allowed) > 10:
-                    self.maxdepth = 4
-                else:
-                    self.maxdepth = 5
-                #if self.num_moves > 21:
-                #    self.maxdepth = 10
-                #elif self.num_moves > 18:
-                #    self.maxdepth = 7
-                #elif self.num_moves > 12:
-                #    self.maxdepth = 6
-                #if self.num_moves > 8:
-                #    self.maxdepth = 5
-                return self.alphabeta(copy.deepcopy(temp_board), self.maxdepth,  -self.inf, self.inf, True, copy.deepcopy(old_move), copy.deepcopy(temp_block))
+                ret = self.alphabeta(copy.deepcopy(temp_board), self.maxdepth,  -self.inf, self.inf, True, copy.deepcopy(old_move), copy.deepcopy(temp_block))
+                return ret
