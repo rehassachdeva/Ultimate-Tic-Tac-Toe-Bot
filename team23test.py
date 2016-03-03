@@ -16,7 +16,7 @@ class Player23:
 
             self.inf = 1000000000000
 
-            self.threshold = [2, 3, 3, 3]
+            self.threshold = [2, 0, 10, 0]
             
             self.win_pos = [
                     (0, 1, 2),
