@@ -15,6 +15,8 @@ class Player23:
             self.timed_out = False;
 
             self.inf = 1000000000000
+
+            self.threshold = [2, 5.9, 3.9, 0]
             
             self.win_pos = [
                     (0, 1, 2),
@@ -43,19 +45,19 @@ class Player23:
             self.opp_flag = " "
 
             self.local_score = {
-                    "winpos" : 2,
-                    "two" : 1,
-                    "center" : 0.5,
-                    "corner" : 0.4,
-                    "rest" : 0.3
+                    "winpos" : 0.02,
+                    "two" : 0.01,
+                    "center" : 0.005,
+                    "corner" : 0.004,
+                    "rest" : 0.003
                     }
             
             self.global_score = {
-                    "winpos" : 1000,
-                    "two" : 10,
-                    "center" : 5,
-                    "corner" : 4,
-                    "rest" : 3
+                    "winpos" : 10,
+                    "two" : 0.1,
+                    "center" : 0.05,
+                    "corner" : 0.04,
+                    "rest" : 0.03
                     }
             
             self.llookup = {
@@ -155,6 +157,7 @@ class Player23:
                         for k in xrange(start_col, start_col + 3):
                             if temp_board[j][k] == '-':
                                 cells.append((j,k))
+
             return cells
 
         def heuristic(self, node, temp_block):
@@ -309,10 +312,10 @@ class Player23:
 
         def alphabeta(self, node, depth, alpha, beta, maximizingPlayer, old_move, temp_block):            
 
-            if depth == 0 or self.timed_out == True:
+            if (depth == 0 and depth != self.maxdepth) or self.timed_out == True:
                     return self.heuristic(copy.deepcopy(node), copy.deepcopy(temp_block))
             
-            if time.time() - self.came > 5.8:
+            if time.time() - self.came >= self.threshold[self.maxdepth-4]:
                 self.timed_out = True
                 return self.heuristic(copy.deepcopy(node), copy.deepcopy(temp_block))
 
@@ -372,7 +375,11 @@ class Player23:
                     return v
 
 	def move(self, temp_board, temp_block, old_move, flag):
-                self.came = time.time()
+                if old_move == (-1, -1):
+                    return (3, 3)
+                ret2 = " "
+                ret3 = " "
+                ret4 = " "
                 self.timed_out = False
                 self.flag = flag
                 if self.opp_flag == " ":
@@ -380,5 +387,28 @@ class Player23:
                         self.opp_flag = 'o'
                     else:
                         self.opp_flag = 'x'
+                self.maxdepth = 7
+                self.came = time.time()
                 ret = self.alphabeta(copy.deepcopy(temp_board), self.maxdepth,  -self.inf, self.inf, True, copy.deepcopy(old_move), copy.deepcopy(temp_block))
-                return ret
+                if self.timed_out == True:
+                    self.timed_out = False
+                    self.maxdepth = 6
+                    self.came = time.time()
+                    ret2 = self.alphabeta(copy.deepcopy(temp_board), self.maxdepth, -self.inf, self.inf, True, copy.deepcopy(old_move), copy.deepcopy(temp_block))
+                    if self.timed_out == True:
+                        self.timed_out = False
+                        self.maxdepth = 5
+                        self.came = time.time()
+                        ret3 = self.alphabeta(copy.deepcopy(temp_board), self.maxdepth, -self.inf, self.inf, True, copy.deepcopy(old_move), copy.deepcopy(temp_block))
+                        if self.timed_out == True:
+                            self.timed_out = False
+                            self.maxdepth = 4
+                            self.came = time.time()
+                            ret4 = self.alphabeta(copy.deepcopy(temp_board), self.maxdepth, -self.inf, self.inf, True, copy.deepcopy(old_move), copy.deepcopy(temp_block))
+                            return ret4                            
+                        else:
+                            return ret3
+                    else:
+                        return ret2
+                else:
+                    return ret
