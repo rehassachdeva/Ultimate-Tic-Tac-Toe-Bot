@@ -31,10 +31,11 @@ class Player23:
 
             self.twos = []
 
-            for each in self.win_pos:
-                self.twos.append((each[0],each[1]))
-                self.twos.append((each[1],each[2]))
-                self.twos.append((each[0],each[1]))
+	    for each in self.win_pos:
+                self.twos.append((each[0],each[1],each[2]))
+                self.twos.append((each[1],each[2],each[0]))
+                self.twos.append((each[0],each[2],each[1]))
+
 
             self.corners = [0, 2, 6, 8]
 
@@ -45,19 +46,23 @@ class Player23:
             self.opp_flag = " "
 
             self.local_score = {
-                    "winpos" : 0.02,
-                    "two" : 0.01,
-                    "center" : 0.005,
-                    "corner" : 0.004,
-                    "rest" : 0
+                    "winpos" : 1,
+                    "two" : 0.025,
+                    "center" : 0.020,
+                    "corner" : 0.007,
+                    "rest" : 0.002,
+                    "blockedtwo":0.010,
+                    "blockpos":0.040,
                     }
             
             self.global_score = {
-                    "winpos" : 10,
-                    "two" : 0.1,
-                    "center" : 0.05,
-                    "corner" : 0.05,
-                    "rest" : 0.05
+                    "winpos" : 100,
+                    "two" : 95,
+                    "center" : 90,
+                    "corner" : 30,
+                    "rest" : 5,
+                    "blockedtwo":25,
+                    "blockpos":60,
                     }
             
             self.llookup = {
@@ -207,10 +212,19 @@ class Player23:
 
                 #Local twos
                 for each in self.twos:
-                    if i_stat[each[0]] == curr_flag and i_stat[each[1]] == curr_flag:
+                    if i_stat[each[0]] == curr_flag and i_stat[each[1]] == curr_flag and i_stat[each[2]]=='-':
                         utility +=  self.local_score["two"]
-                    if i_stat[each[0]] == curr_opp_flag and i_stat[each[1]] == curr_opp_flag:
+
+                    if i_stat[each[0]] == curr_flag and i_stat[each[1]] == curr_flag and i_stat[each[2]]==curr_opp_flag:
+                        utility +=  self.local_score["blockedtwo"]
+                        utility -=  self.local_score["blockpos"]#opponent in blocking position,dec utility
+
+                    if i_stat[each[0]] == curr_opp_flag and i_stat[each[1]] == curr_opp_flag and i_stat[each[2]]=='-':
                         utility -= self.local_score["two"]
+
+                    if i_stat[each[0]] == curr_opp_flag and i_stat[each[1]] == curr_opp_flag and i_stat[each[2]]==curr_flag:
+                        utility -= self.local_score["blockedtwo"]
+                        utility += self.local_score["blockpos"]#self in blocking position,inc utility
 
                 #Local corner
                 for each in self.corners:
@@ -257,10 +271,20 @@ class Player23:
 
                 #Global twos
                 for each in self.twos:
-                    if i_stat[each[0]] == curr_flag and i_stat[each[1]] == curr_flag:
+                    if i_stat[each[0]] == curr_flag and i_stat[each[1]] == curr_flag and i_stat[each[2]]=='-':
                         utility +=  self.global_score["two"]
-                    if i_stat[each[0]] == curr_opp_flag and i_stat[each[1]] == curr_opp_flag:
+
+                    if i_stat[each[0]] == curr_flag and i_stat[each[1]] == curr_flag and i_stat[each[2]]==curr_opp_flag:
+                        utility +=  self.global_score["blockedtwo"]
+                        utility -=  self.global_score["blockpos"]#opponent in blocking position,dec utility
+
+                    if i_stat[each[0]] == curr_opp_flag and i_stat[each[1]] == curr_opp_flag and i_stat[each[2]]=='-':
                         utility -= self.global_score["two"]
+
+                    if i_stat[each[0]] == curr_opp_flag and i_stat[each[1]] == curr_opp_flag and i_stat[each[2]]==curr_flag:
+                        utility -= self.global_score["blockedtwo"]
+                        utility += self.global_score["blockpos"]#self in blocking position,inc utility
+
 
                 #Global corner
                 for each in self.corners:
